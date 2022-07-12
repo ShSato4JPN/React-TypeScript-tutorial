@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { Todo } from '../model'
 import { AiFillEdit, AiFillDelete } from 'react-icons/ai'
 import { MdDone } from 'react-icons/md'
@@ -12,19 +12,64 @@ type Props = {
 }
 
 const SingleTodo = ({ todo, todos, setTodos }: Props) => {
+  const [edit, setEdit] = useState<boolean>(false)
+  const [editTodo, setEditTodo] = useState<string>(todo.todo)
+
   const handleDone = (id: number) => {
     setTodos(todos.map((todo) => (todo.id === id ? { ...todo, isDone: !todo.isDone } : todo)))
-    console.log(todos)
   }
 
+  const handleDelete = (id: number) => {
+    setTodos(todos.filter((todo) => todo.id !== id))
+  }
+
+  const handleEdit = (e: React.FormEvent, id: number) => {
+    // form が持つデフォルトの処理を無効化する。
+    //　デフォルトの処理とは、指定の URL　にリクエストを投げる処理のこと
+    e.preventDefault()
+    // {...todo, todo: editTodo<string>} とは、
+    //　props　で渡された todo　オブジェクト内の todo の値を変更するという意味。
+    // 下の例を参考にすると、foo　オブジェクトは name='jacoby', age='27' のデータを持つ。
+    //　bar にオブジェクトをコピーする際、age: 40 を追加することで、
+    //　bar　に格納されるオブジェクトの age　の値は ４０ となる。
+    //
+    // const foo = {
+    //   name: 'jacoby',
+    //   age: 27
+    // }
+    // const bar = {...foo, age: 40}
+
+    setTodos(todos.map((todo) => (todo.id === id ? { ...todo, todo: editTodo } : todo)))
+    setEdit(false)
+  }
+
+  const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    inputRef.current?.focus()
+  }, [edit])
+
   return (
-    <form className="todos_single">
-      <span className="todos_single--text">{todo.todo}</span>
+    <form className="todos_single" onSubmit={(e) => handleEdit(e, todo.id)}>
+      {edit ? (
+        <input value={editTodo} onChange={(e) => setEditTodo(e.target.value)} className="todos_single--text" />
+      ) : todo.isDone ? (
+        <s className="todos_single--text">{todo.todo}</s>
+      ) : (
+        <span className="todos_single--text">{todo.todo}</span>
+      )}
       <div>
-        <span className="icon">
+        <span
+          className="icon"
+          onClick={() => {
+            if (!edit && !todo.isDone) {
+              setEdit(!edit)
+            }
+          }}
+        >
           <AiFillEdit />
         </span>
-        <span className="icon">
+        <span className="icon" onClick={() => handleDelete(todo.id)}>
           <AiFillDelete />
         </span>
         <span className="icon" onClick={() => handleDone(todo.id)}>
